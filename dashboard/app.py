@@ -2,6 +2,9 @@ import streamlit as st
 import sys
 from pathlib import Path
 import pandas as pd
+from database import save_event, get_recent_events
+import requests
+
 
 # ============================================================
 # PROJECT IMPORT
@@ -99,6 +102,7 @@ pipeline_result = run_pipeline(
     sensor_data,
     tamper=(mode == "Cyber Attack")
 )
+save_event(sensor_data, pipeline_result)
 
 
 # ============================================================
@@ -490,38 +494,33 @@ st.divider()
 
 st.subheader("📈 Sensor History")
 
-history = pd.DataFrame({
+recent_events = get_recent_events(20)
 
-    "Temperature (°C)": [
-        27.0,
-        27.3,
-        27.1,
-        27.5,
-        27.8,
-        28.0,
-        sensor_data["temperature"]
-    ],
+if recent_events:
 
-    "Humidity (%)": [
-        55,
-        57,
-        56,
-        58,
-        59,
-        60,
-        sensor_data["humidity"]
-    ],
+    history = pd.DataFrame(recent_events)
 
-    "Vibration": [
-        0.18,
-        0.21,
-        0.20,
-        0.22,
-        0.19,
-        0.25,
-        sensor_data["vibration"]
+    history = history.sort_values("id")
+
+    chart_data = history[
+        [
+            "temperature",
+            "humidity",
+            "vibration"
+        ]
     ]
-})
+
+    chart_data.columns = [
+        "Temperature",
+        "Humidity",
+        "Vibration"
+    ]
+
+    st.line_chart(chart_data)
+
+else:
+
+    st.info("No sensor history available yet.")
 
 
 st.line_chart(history)
@@ -536,43 +535,33 @@ st.divider()
 
 st.subheader("📋 Recent Events")
 
-events = pd.DataFrame({
+recent_events = get_recent_events(20)
 
-    "Event": [
-        "Sensor data received",
-        "Device verification",
-        "HMAC integrity check",
-        "Security risk analysis",
-        "AI anomaly detection",
-        "Final system decision"
-    ],
+if recent_events:
 
-    "Status": [
+    events = pd.DataFrame(recent_events)
 
-        "🟢 Received",
-
-        "🟢 Verified"
-        if device_verified
-        else "🔴 Rejected",
-
-        "🟢 Valid"
-        if signature_valid
-        else "🔴 Invalid",
-
-        security_risk,
-
-        ai_risk,
-
-        final_status
+    display_columns = [
+        "timestamp",
+        "device_id",
+        "security_risk",
+        "security_risk_score",
+        "ai_risk",
+        "ai_risk_score",
+        "final_status",
+        "action"
     ]
-})
 
+    events = events[display_columns]
 
-st.dataframe(
-    events,
-    use_container_width=True,
-    hide_index=True
-)
+    st.dataframe(
+        events,
+        use_container_width=True
+    )
+
+else:
+
+    st.info("No events recorded yet.")
 
 
 st.divider()
