@@ -1,85 +1,109 @@
+from cybersecurity.devices import (
+    verify_device,
+    get_device_secret
+)
+
 from cybersecurity.security import (
     generate_signature,
     verify_signature
 )
 
-from cybersecurity.risk_engine import (
-    calculate_risk
-)
 
+# ============================================================
+# SAMPLE SENSOR DATA
+# ============================================================
 
-# Our test device
-secret = "ESP32_SECRET_KEY_01"
-
-# Normal sensor data
-data = {
+sensor_data = {
     "device_id": "ESP32_01",
-    "temperature": 38,
-    "humidity": 60
+    "timestamp": "2026-08-29T23:00:00",
+    "temperature": 30,
+    "humidity": 60,
+    "voltage": 3.3,
+    "current": 0.42,
+    "vibration": 0.12
 }
 
 
-# Create a security signature
+print("\n" + "=" * 60)
+print("SAFE LAB SENTINEL - CYBERSECURITY TEST")
+print("=" * 60)
+
+
+# ============================================================
+# TEST 1 — AUTHORIZED DEVICE
+# ============================================================
+
+print("\n[TEST 1] AUTHORIZED DEVICE")
+
+device_id = sensor_data["device_id"]
+
+authorized = verify_device(device_id)
+
+print("Device:", device_id)
+print("Authorized:", authorized)
+
+
+# ============================================================
+# TEST 2 — UNKNOWN DEVICE
+# ============================================================
+
+print("\n[TEST 2] UNKNOWN DEVICE")
+
+unknown_device = "UNKNOWN_DEVICE"
+
+authorized_unknown = verify_device(unknown_device)
+
+print("Device:", unknown_device)
+print("Authorized:", authorized_unknown)
+
+
+# ============================================================
+# TEST 3 — VALID HMAC
+# ============================================================
+
+print("\n[TEST 3] VALID HMAC")
+
+secret = get_device_secret(device_id)
+
 signature = generate_signature(
-    data,
+    sensor_data,
     secret
 )
 
-print("================================")
-print("CYBERSECURITY TEST")
-print("================================")
-
-print("\nGenerated HMAC signature:")
-print(signature)
-
-# Check whether the signature is valid
-result = verify_signature(
-    data,
-    signature,
-    secret
-)
-# Simulate an attacker changing the temperature
-data["temperature"] = 99
-
-tampered_result = verify_signature(
-    data,
+valid_signature = verify_signature(
+    sensor_data,
     signature,
     secret
 )
 
-print("\nAfter someone changes the temperature to 99:")
-print("Is the tampered signature valid?")
-print(tampered_result)
+print("Signature generated:", signature)
+print("Signature valid:", valid_signature)
 
-print("\nIs the signature valid?")
-print(result)
 
-# Check the risk level
-risk = calculate_risk(data)
+# ============================================================
+# TEST 4 — TAMPERED DATA
+# ============================================================
 
-print("\nRisk analysis:")
-print(risk)
+print("\n[TEST 4] TAMPERED DATA")
 
-print("\n================================")
-print("TEST COMPLETE")
-print("================================")
-# Test an unknown device
+tampered_data = sensor_data.copy()
 
-fake_data = {
-    "device_id": "HACKER_01",
-    "temperature": 38,
-    "humidity": 60
-}
+tampered_data["temperature"] = 99
 
-print("\n================================")
-print("UNKNOWN DEVICE TEST")
-print("================================")
-
-from cybersecurity.devices import verify_device
-
-fake_device_result = verify_device(
-    fake_data["device_id"]
+tampered_signature_valid = verify_signature(
+    tampered_data,
+    signature,
+    secret
 )
 
-print("\nIs the device authorized?")
-print(fake_device_result)
+print("Original temperature:", sensor_data["temperature"])
+print("Tampered temperature:", tampered_data["temperature"])
+print(
+    "Signature valid after tampering:",
+    tampered_signature_valid
+)
+
+
+print("\n" + "=" * 60)
+print("CYBERSECURITY TEST COMPLETE")
+print("=" * 60)

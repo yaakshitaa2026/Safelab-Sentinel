@@ -1,6 +1,15 @@
 import streamlit as st
+import sys
+from pathlib import Path
 import requests
 import pandas as pd
+# Allow dashboard to import project-level pipeline.py
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from pipeline import run_pipeline
 
 
 # ============================================================
@@ -41,6 +50,43 @@ mode = st.sidebar.radio(
     "Simulation Mode",
     ["Normal", "Hazard", "Cyber Attack"]
 )
+if mode == "Normal":
+
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "timestamp": "2026-08-29T23:00:00",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
+    }
+
+elif mode == "Hazard":
+
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "timestamp": "2026-08-29T23:05:00",
+        "temperature": 85,
+        "humidity": 92,
+        "voltage": 4.3,
+        "current": 2.0,
+        "vibration": 3.0
+    }
+
+else:
+
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "timestamp": "2026-08-29T23:10:00",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
+    }
+
+pipeline_result = run_pipeline(sensor_data)
 
 
 # ============================================================

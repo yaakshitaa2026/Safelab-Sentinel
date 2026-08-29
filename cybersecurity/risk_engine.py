@@ -1,19 +1,15 @@
 def calculate_risk(data):
     """
-    Calculate laboratory safety/security risk from sensor data.
+    Calculate laboratory safety risk from sensor readings.
 
     Returns:
         risk_score: 0-100
         risk_level: LOW / MEDIUM / HIGH
-        reasons: list of detected issues
+        reasons: detected abnormal conditions
     """
 
     risk_score = 0
     reasons = []
-
-    # ---------------------------------------------------------
-    # SENSOR VALUES
-    # ---------------------------------------------------------
 
     temperature = data.get("temperature", 0)
     humidity = data.get("humidity", 0)
@@ -53,7 +49,7 @@ def calculate_risk(data):
         risk_score += 20
         reasons.append("Abnormally high voltage")
 
-    elif voltage < 2.8 and voltage > 0:
+    elif 0 < voltage < 2.8:
         risk_score += 15
         reasons.append("Abnormally low voltage")
 
@@ -81,14 +77,11 @@ def calculate_risk(data):
         risk_score += 10
         reasons.append("High vibration")
 
-    # ---------------------------------------------------------
-    # LIMIT SCORE TO 100
-    # ---------------------------------------------------------
-
+    # Keep score within 0-100
     risk_score = min(risk_score, 100)
 
     # ---------------------------------------------------------
-    # DETERMINE RISK LEVEL
+    # RISK LEVEL
     # ---------------------------------------------------------
 
     if risk_score >= 60:
@@ -105,11 +98,9 @@ def calculate_risk(data):
     # ---------------------------------------------------------
 
     if not reasons:
-        reasons.append("All monitored parameters are within normal range")
-
-    # ---------------------------------------------------------
-    # FINAL RESULT
-    # ---------------------------------------------------------
+        reasons.append(
+            "All monitored parameters are within normal range"
+        )
 
     return {
         "risk_score": risk_score,
