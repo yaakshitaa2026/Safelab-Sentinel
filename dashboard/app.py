@@ -2,12 +2,9 @@ import streamlit as st
 import sys
 from pathlib import Path
 import pandas as pd
-from database import save_event, get_recent_events
-import requests
-
 
 # ============================================================
-# PROJECT IMPORT
+# PROJECT IMPORTS
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -16,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from pipeline import run_pipeline
+from database import save_event, get_recent_events
 
 
 # ============================================================
@@ -23,7 +21,7 @@ from pipeline import run_pipeline
 # ============================================================
 
 st.set_page_config(
-    page_title="Safe Lab Sentinel",
+    page_title="SafeLab Sentinel",
     page_icon="🛡️",
     layout="wide"
 )
@@ -33,26 +31,30 @@ st.set_page_config(
 # TITLE
 # ============================================================
 
-st.title("🛡️ Safe Lab Sentinel")
+st.title("🛡️ SafeLab Sentinel")
 st.subheader("Intelligent Laboratory Monitoring & Security System")
 
 st.divider()
 
 
 # ============================================================
-# SIDEBAR
+# SIDEBAR / CONTROL PANEL
 # ============================================================
 
 st.sidebar.title("🎛️ Control Panel")
 
 mode = st.sidebar.radio(
     "Simulation Mode",
-    ["Normal", "Hazard", "Cyber Attack"]
+    [
+        "Normal",
+        "Hazard",
+        "Cyber Attack"
+    ]
 )
 
 
 # ============================================================
-# SENSOR SIMULATION
+# SENSOR DATA
 # ============================================================
 
 if mode == "Normal":
@@ -84,7 +86,7 @@ elif mode == "Hazard":
 else:
 
     sensor_data = {
-        "device_id": "ESP32_01",
+        "device_id": "UNKNOWN_DEVICE",
         "timestamp": "2026-08-30T00:10:00",
         "temperature": 30,
         "humidity": 60,
@@ -95,21 +97,28 @@ else:
 
 
 # ============================================================
-# RUN COMPLETE PIPELINE
+# RUN COMPLETE SAFELAB SENTINEL PIPELINE
 # ============================================================
 
 pipeline_result = run_pipeline(
     sensor_data,
     tamper=(mode == "Cyber Attack")
 )
-save_event(sensor_data, pipeline_result)
+
+
+# ============================================================
+# SAVE EVENT TO DATABASE
+# ============================================================
+
+save_event(
+    sensor_data,
+    pipeline_result
+)
 
 
 # ============================================================
 # EXTRACT PIPELINE RESULTS
 # ============================================================
-
-device_id = sensor_data["device_id"]
 
 device_verified = pipeline_result.get(
     "device_verified",
@@ -131,7 +140,7 @@ security_risk = pipeline_result.get(
     "UNKNOWN"
 )
 
-security_score = pipeline_result.get(
+security_risk_score = pipeline_result.get(
     "security_risk_score",
     0
 )
@@ -151,7 +160,7 @@ ai_risk = pipeline_result.get(
     "UNKNOWN"
 )
 
-ai_score = pipeline_result.get(
+ai_risk_score = pipeline_result.get(
     "ai_risk_score",
     0
 )
@@ -185,18 +194,21 @@ with col1:
 
     st.metric(
         "Device",
-        device_id
+        sensor_data["device_id"]
     )
 
 
 with col2:
 
     if device_verified:
+
         st.metric(
             "Device Security",
             "VERIFIED"
         )
+
     else:
+
         st.metric(
             "Device Security",
             "REJECTED"
@@ -309,15 +321,15 @@ with col3:
 
     st.metric(
         "Security Risk Score",
-        security_score
+        security_risk_score
     )
 
 
 # ============================================================
-# SECURITY STATUS DETAILS
+# SECURITY STATUS
 # ============================================================
 
-st.subheader("Security Status")
+st.markdown("### Security Status")
 
 st.write(
     f"**Status:** {security_status}"
@@ -327,6 +339,10 @@ st.write(
     f"**Risk Level:** {security_risk}"
 )
 
+st.write(
+    f"**Risk Score:** {security_risk_score}"
+)
+
 
 if security_reasons:
 
@@ -334,14 +350,14 @@ if security_reasons:
 
     for reason in security_reasons:
 
-        st.warning(
+        st.write(
             f"⚠️ {reason}"
         )
 
 else:
 
-    st.success(
-        "🟢 No security abnormalities detected."
+    st.write(
+        "✅ No security anomalies detected."
     )
 
 
@@ -359,22 +375,28 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    if ai_prediction == 1:
+    if ai_status == "OFFLINE":
 
-        st.error(
-            f"🚨 AI Status: {ai_status}"
+        st.warning(
+            "🟡 AI STATUS: OFFLINE"
         )
 
     elif ai_status == "NOT_RUN":
 
-        st.warning(
-            "⚠️ AI Analysis Not Run"
+        st.info(
+            "ℹ️ AI STATUS: NOT RUN"
+        )
+
+    elif ai_prediction == 1:
+
+        st.error(
+            f"🚨 AI STATUS: {ai_status}"
         )
 
     else:
 
         st.success(
-            f"🟢 AI Status: {ai_status}"
+            f"🟢 AI STATUS: {ai_status}"
         )
 
 
@@ -390,12 +412,12 @@ with col3:
 
     st.metric(
         "AI Risk Score",
-        ai_score
+        ai_risk_score
     )
 
 
 st.write(
-    f"**AI Prediction:** `{ai_prediction}`"
+    f"**AI Prediction:** {ai_prediction}"
 )
 
 
@@ -457,11 +479,14 @@ with col2:
 # DECISION EXPLANATION
 # ============================================================
 
+st.markdown("### Decision Explanation")
+
+
 if action == "BLOCK":
 
     st.error(
-        "⛔ The system blocked the data because the device "
-        "or message failed security verification."
+        "🛑 The system blocked the data because "
+        "the device or message failed security verification."
     )
 
 elif action == "ALERT":
@@ -478,10 +503,17 @@ elif action == "INVESTIGATE":
         "that should be investigated."
     )
 
-else:
+elif action == "MONITOR":
 
     st.success(
-        "✅ No critical abnormalities detected."
+        "🟢 The system is operating normally and "
+        "continues to monitor the environment."
+    )
+
+else:
+
+    st.info(
+        f"System action: {action}"
     )
 
 
@@ -496,34 +528,53 @@ st.subheader("📈 Sensor History")
 
 recent_events = get_recent_events(20)
 
+
 if recent_events:
 
     history = pd.DataFrame(recent_events)
 
-    history = history.sort_values("id")
+    history = history.sort_values(
+        "id"
+    )
 
-    chart_data = history[
-        [
-            "temperature",
-            "humidity",
-            "vibration"
+    chart_columns = [
+        "temperature",
+        "humidity",
+        "vibration"
+    ]
+
+    available_columns = [
+        column
+        for column in chart_columns
+        if column in history.columns
+    ]
+
+    if available_columns:
+
+        chart_data = history[
+            available_columns
+        ].copy()
+
+        chart_data.columns = [
+            column.capitalize()
+            for column in available_columns
         ]
-    ]
 
-    chart_data.columns = [
-        "Temperature",
-        "Humidity",
-        "Vibration"
-    ]
+        st.line_chart(
+            chart_data
+        )
 
-    st.line_chart(chart_data)
+    else:
+
+        st.info(
+            "Sensor history data is not available."
+        )
 
 else:
 
-    st.info("No sensor history available yet.")
-
-
-st.line_chart(history)
+    st.info(
+        "No sensor history available yet."
+    )
 
 
 st.divider()
@@ -537,31 +588,55 @@ st.subheader("📋 Recent Events")
 
 recent_events = get_recent_events(20)
 
+
 if recent_events:
 
-    events = pd.DataFrame(recent_events)
+    events = pd.DataFrame(
+        recent_events
+    )
 
     display_columns = [
         "timestamp",
         "device_id",
+        "security_status",
         "security_risk",
         "security_risk_score",
+        "ai_status",
         "ai_risk",
         "ai_risk_score",
         "final_status",
         "action"
     ]
 
-    events = events[display_columns]
+    available_display_columns = [
+        column
+        for column in display_columns
+        if column in events.columns
+    ]
 
-    st.dataframe(
-        events,
-        use_container_width=True
-    )
+    if available_display_columns:
+
+        st.dataframe(
+            events[
+                available_display_columns
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+
+        st.dataframe(
+            events,
+            use_container_width=True,
+            hide_index=True
+        )
 
 else:
 
-    st.info("No events recorded yet.")
+    st.info(
+        "No recent events available."
+    )
 
 
 st.divider()
@@ -576,18 +651,22 @@ st.subheader("🔌 Proposed Hardware Extension")
 st.write(
     "The current SafeLab Sentinel prototype is software-based. "
     "The following diagram represents a possible future hardware "
-    "implementation using sensors and a microcontroller."
+    "implementation using sensors and an ESP32."
 )
 
 
-circuit_path = Path(__file__).resolve().parent / "circuit.png"
+circuit_image = (
+    Path(__file__).resolve().parent
+    / "circuit.png"
+)
 
-if circuit_path.exists():
+
+if circuit_image.exists():
 
     st.image(
-        str(circuit_path),
-        caption="Proposed Arduino-based hardware extension",
-        width="stretch"
+        str(circuit_image),
+        caption="Proposed ESP32-based hardware extension",
+        use_container_width=True
     )
 
 else:
