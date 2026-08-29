@@ -422,3 +422,22 @@ st.dataframe(
     events,
     use_container_width=True
 )
+
+st.divider()
+
+# ============================================================
+# PROPOSED HARDWARE EXTENSION
+# ============================================================
+
+st.subheader("🔌 Proposed Hardware Extension")
+
+st.write(
+    "The current SafeLab Sentinel prototype is software-based. "
+    "This diagram shows a possible future hardware implementation."
+)
+
+st.image(
+    "dashboard/circuit.png",
+    caption="Proposed Arduino-based hardware extension",
+    width="stretch"
+)
