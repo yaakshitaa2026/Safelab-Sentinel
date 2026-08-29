@@ -39,9 +39,13 @@ st.sidebar.title("🎛️ Control Panel")
 
 mode = st.sidebar.radio(
     "Simulation Mode",
-    ["Normal", "Hazard"]
+    ["Normal", "Hazard", "Cyber Attack"]
 )
 
+
+# ============================================================
+# SENSOR DATA
+# ============================================================
 
 # ============================================================
 # SENSOR DATA
@@ -58,7 +62,7 @@ if mode == "Normal":
         "vibration": 0.12
     }
 
-else:
+elif mode == "Hazard":
 
     sensor_data = {
         "device_id": "ESP32_01",
@@ -67,6 +71,17 @@ else:
         "voltage": 4.3,
         "current": 2.0,
         "vibration": 3.0
+    }
+
+elif mode == "Cyber Attack":
+
+    sensor_data = {
+        "device_id": "UNKNOWN_DEVICE",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
     }
 
 
