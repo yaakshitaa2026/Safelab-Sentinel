@@ -1,6 +1,11 @@
-
 import streamlit as st
+import requests
 import pandas as pd
+
+
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
 
 st.set_page_config(
     page_title="Safe Lab Sentinel",
@@ -8,129 +13,397 @@ st.set_page_config(
     layout="wide"
 )
 
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+AI_API_URL = "http://127.0.0.1:8000/predict"
+
+
+# ============================================================
+# TITLE
+# ============================================================
+
 st.title("🛡️ Safe Lab Sentinel")
 st.subheader("Intelligent Laboratory Monitoring System")
+
+st.divider()
+
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
 st.sidebar.title("🎛️ Control Panel")
 
 mode = st.sidebar.radio(
     "Simulation Mode",
-    ["Normal", "Hazard", "Cyber Attack"]
+    ["Normal", "Hazard"]
 )
 
-st.divider()
 
-col1, col2 = st.columns(2)
+# ============================================================
+# SENSOR DATA
+# ============================================================
 
-with col1:
-    st.metric("Device Status", "🟢 ONLINE")
+if mode == "Normal":
 
-with col2:
-    st.metric("System Risk", "🟢 NORMAL")
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
+    }
 
-st.set_page_config(
-    page_title="Safe Lab Sentinel",
-    page_icon="🛡️",
-    layout="wide"
-)
+else:
 
-st.title("🛡️ Safe Lab Sentinel")
-st.subheader("Intelligent Laboratory Monitoring System")
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "temperature": 85,
+        "humidity": 92,
+        "voltage": 4.3,
+        "current": 2.0,
+        "vibration": 3.0
+    }
 
-st.divider()
 
-col1, col2 = st.columns(2)
+# ============================================================
+# GET AI RESULT
+# ============================================================
 
-with col1:
-    st.metric("Device Status", "🟢 ONLINE")
+try:
 
-with col2:
-    if mode == "Normal":
-        risk = "🟢 NORMAL"
+    response = requests.post(
+        AI_API_URL,
+        json=sensor_data,
+        timeout=5
+    )
 
-    elif mode == "Hazard":
-        risk = "🔴 CRITICAL"
+    ai_result = response.json()
 
-    elif mode == "Cyber Attack":
-        risk = "🚨 SECURITY ALERT"
-with col2:
-    st.metric("System Risk", risk)
-st.divider()
+    ai_connected = True
 
-st.subheader("📡 Live Sensor Readings")
+except Exception as error:
+
+    ai_result = {}
+
+    ai_connected = False
+
+    st.error(
+        "⚠️ AI backend is not running. "
+        "Start the FastAPI server first."
+    )
+
+
+# ============================================================
+# TOP STATUS CARDS
+# ============================================================
 
 col1, col2, col3 = st.columns(3)
 
-if mode == "Normal":
-    temperature = 27.4
-    gas = 142
-    vibration = 0.21
 
-elif mode == "Hazard":
-    temperature = 75.0
-    gas = 950
-    vibration = 8.5
-
-elif mode == "Cyber Attack":
-    temperature = 27.4
-    gas = 142
-    vibration = 0.21
 with col1:
-    st.metric("🌡️ Temperature", f"{temperature} °C")
+
+    st.metric(
+        "Device",
+        sensor_data["device_id"]
+    )
+
 
 with col2:
-    st.metric("💨 Gas Level", gas)
+
+    if ai_connected:
+
+        st.metric(
+            "AI Connection",
+            "🟢 ONLINE"
+        )
+
+    else:
+
+        st.metric(
+            "AI Connection",
+            "🔴 OFFLINE"
+        )
+
 
 with col3:
-    st.metric("📳 Vibration", vibration)
+
+    if ai_connected:
+
+        risk = ai_result.get(
+            "risk",
+            "UNKNOWN"
+        )
+
+        st.metric(
+            "AI Risk",
+            risk
+        )
+
+    else:
+
+        st.metric(
+            "AI Risk",
+            "UNKNOWN"
+        )
+
+
 st.divider()
 
-st.subheader("📈 Sensor History")
 
-data = pd.DataFrame({
-    "Temperature": [27.0, 27.3, 27.1, 27.5, 27.8, 28.0, 27.6],
-    "Gas Level": [140, 142, 145, 143, 150, 148, 146],
-    "Vibration": [0.18, 0.21, 0.20, 0.22, 0.19, 0.25, 0.21]
-})
+# ============================================================
+# SENSOR READINGS
+# ============================================================
 
-st.line_chart(data)
+st.subheader("📡 Live Sensor Readings")
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+
+with col1:
+
+    st.metric(
+        "🌡️ Temperature",
+        f"{sensor_data['temperature']} °C"
+    )
+
+
+with col2:
+
+    st.metric(
+        "💧 Humidity",
+        f"{sensor_data['humidity']} %"
+    )
+
+
+with col3:
+
+    st.metric(
+        "⚡ Voltage",
+        f"{sensor_data['voltage']} V"
+    )
+
+
+with col4:
+
+    st.metric(
+        "🔌 Current",
+        f"{sensor_data['current']} A"
+    )
+
+
+with col5:
+
+    st.metric(
+        "📳 Vibration",
+        sensor_data["vibration"]
+    )
+
+
 st.divider()
+
+
+# ============================================================
+# AI MONITORING
+# ============================================================
 
 st.subheader("🤖 AI Monitoring")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
+
+
+if ai_connected:
+
+    ai_status = ai_result.get(
+        "status",
+        "UNKNOWN"
+    )
+
+    ai_risk = ai_result.get(
+        "risk",
+        "UNKNOWN"
+    )
+
+    risk_score = ai_result.get(
+        "risk_score",
+        0
+    )
+
+    prediction = ai_result.get(
+        "prediction",
+        0
+    )
+
+else:
+
+    ai_status = "OFFLINE"
+    ai_risk = "UNKNOWN"
+    risk_score = 0
+    prediction = 0
+
 
 with col1:
-    st.success("🟢 SYSTEM NORMAL")
+
+    if prediction == 1:
+
+        st.error(
+            f"🚨 {ai_status}"
+        )
+
+    else:
+
+        st.success(
+            f"🟢 {ai_status}"
+        )
+
 
 with col2:
-    st.info("AI anomaly detection is active.")
+
+    st.metric(
+        "Risk Level",
+        ai_risk
+    )
+
+
+with col3:
+
+    st.metric(
+        "Risk Score",
+        risk_score
+    )
+
+
 st.divider()
+
+
+# ============================================================
+# CYBERSECURITY STATUS
+# ============================================================
 
 st.subheader("🔐 Cybersecurity Status")
 
 col1, col2 = st.columns(2)
 
+
 with col1:
-    st.success("🟢 DEVICE VERIFIED")
+
+    st.success(
+        "🟢 DEVICE VERIFIED"
+    )
+
 
 with col2:
-    st.info("HMAC integrity verification active")
+
+    st.info(
+        "HMAC integrity verification active"
+    )
+
+
 st.divider()
+
+
+# ============================================================
+# SYSTEM DECISION
+# ============================================================
+
+st.subheader("🚨 System Decision")
+
+
+if prediction == 1:
+
+    st.error(
+        "🚨 ALERT — SUSPICIOUS ACTIVITY DETECTED"
+    )
+
+    st.write(
+        "The AI model detected an abnormal sensor pattern."
+    )
+
+else:
+
+    st.success(
+        "🟢 SYSTEM NORMAL"
+    )
+
+    st.write(
+        "No abnormal sensor pattern detected."
+    )
+
+
+st.divider()
+
+
+# ============================================================
+# SENSOR HISTORY
+# ============================================================
+
+st.subheader("📈 Sensor History")
+
+history = pd.DataFrame({
+
+    "Temperature": [
+        27.0,
+        27.3,
+        27.1,
+        27.5,
+        27.8,
+        28.0,
+        sensor_data["temperature"]
+    ],
+
+    "Humidity": [
+        55,
+        57,
+        56,
+        58,
+        59,
+        60,
+        sensor_data["humidity"]
+    ],
+
+    "Vibration": [
+        0.18,
+        0.21,
+        0.20,
+        0.22,
+        0.19,
+        0.25,
+        sensor_data["vibration"]
+    ]
+})
+
+st.line_chart(history)
+
+
+st.divider()
+
+
+# ============================================================
+# RECENT EVENTS
+# ============================================================
 
 st.subheader("📋 Recent Events")
 
 events = pd.DataFrame({
-    "Time": ["14:20", "14:18", "14:15"],
+
     "Event": [
         "Sensor data received",
-        "Device authenticated",
-        "System check completed"
+        "AI analysis completed",
+        "Security verification completed"
     ],
+
     "Status": [
-        "🟢 Normal",
-        "🟢 Verified",
-        "🟢 Passed"
+        "🟢 Received",
+        "🚨 Suspicious" if prediction == 1 else "🟢 Normal",
+        "🟢 Verified"
     ]
 })
 
-st.dataframe(events, use_container_width=True)
+st.dataframe(
+    events,
+    use_container_width=True
+)
