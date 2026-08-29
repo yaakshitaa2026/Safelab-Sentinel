@@ -1,89 +1,38 @@
 from cybersecurity.risk_engine import calculate_risk
 
 
-def test_case(name, data):
-    print("\n" + "=" * 50)
-    print(name)
-    print("=" * 50)
-
-    result = calculate_risk(data)
-
-    print("Risk Score:", result["risk_score"])
-    print("Risk Level:", result["risk_level"])
-
-    print("Reasons:")
-
-    for reason in result["reasons"]:
-        print(" -", reason)
-
-
-# ============================================================
-# TEST 1 — NORMAL
-# ============================================================
-
-test_case(
-    "TEST 1 — NORMAL",
-    {
-        "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:00:00",
+def test_normal_case():
+    data = {
         "temperature": 30,
         "humidity": 60,
         "voltage": 3.3,
         "current": 0.42,
         "vibration": 0.12
     }
-)
+
+    result = calculate_risk(data)
+
+    assert result["risk_score"] == 0
+    assert result["risk_level"] == "LOW"
+    assert result["reasons"] == [
+        "All monitored parameters are within normal range"
+    ]
 
 
-# ============================================================
-# TEST 2 — HAZARD
-# ============================================================
-
-test_case(
-    "TEST 2 — HAZARD",
-    {
-        "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:05:00",
+def test_hazard_case():
+    data = {
         "temperature": 85,
         "humidity": 92,
         "voltage": 4.3,
         "current": 2.0,
         "vibration": 3.0
     }
-)
 
+    result = calculate_risk(data)
 
-# ============================================================
-# TEST 3 — VIBRATION
-# ============================================================
+    assert result["risk_score"] == 95
+    assert result["risk_level"] == "HIGH"
 
-test_case(
-    "TEST 3 — VIBRATION",
-    {
-        "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:10:00",
-        "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
-        "vibration": 2.5
-    }
-)
-
-
-# ============================================================
-# TEST 4 — ELECTRICAL
-# ============================================================
-
-test_case(
-    "TEST 4 — ELECTRICAL",
-    {
-        "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:15:00",
-        "temperature": 30,
-        "humidity": 60,
-        "voltage": 4.5,
-        "current": 1.5,
-        "vibration": 0.12
-    }
-)
+    assert "Critically high temperature" in result["reasons"]
+    assert "Abnormally high humidity" in result["reasons"]
+    assert "Abnormally high voltage" in result["reasons"]

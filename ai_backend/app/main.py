@@ -13,8 +13,12 @@ app = FastAPI(
 
 
 # Load the trained machine-learning model
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 model = joblib.load(
-    "model/anomaly_model.pkl"
+    BASE_DIR / "model" / "anomaly_model.pkl"
 )
 
 

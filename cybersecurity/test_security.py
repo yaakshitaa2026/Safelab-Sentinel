@@ -9,101 +9,74 @@ from cybersecurity.security import (
 )
 
 
-# ============================================================
-# SAMPLE SENSOR DATA
-# ============================================================
+def test_authorized_device():
+    device_id = "ESP32_01"
 
-sensor_data = {
-    "device_id": "ESP32_01",
-    "timestamp": "2026-08-29T23:00:00",
-    "temperature": 30,
-    "humidity": 60,
-    "voltage": 3.3,
-    "current": 0.42,
-    "vibration": 0.12
-}
+    result = verify_device(device_id)
+
+    assert result is True
 
 
-print("\n" + "=" * 60)
-print("SAFE LAB SENTINEL - CYBERSECURITY TEST")
-print("=" * 60)
+def test_unknown_device():
+    device_id = "UNKNOWN_DEVICE"
+
+    result = verify_device(device_id)
+
+    assert result is False
 
 
-# ============================================================
-# TEST 1 — AUTHORIZED DEVICE
-# ============================================================
+def test_valid_hmac():
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "timestamp": "2026-08-29T23:00:00",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
+    }
 
-print("\n[TEST 1] AUTHORIZED DEVICE")
+    secret = get_device_secret("ESP32_01")
 
-device_id = sensor_data["device_id"]
+    signature = generate_signature(
+        sensor_data,
+        secret
+    )
 
-authorized = verify_device(device_id)
+    result = verify_signature(
+        sensor_data,
+        signature,
+        secret
+    )
 
-print("Device:", device_id)
-print("Authorized:", authorized)
-
-
-# ============================================================
-# TEST 2 — UNKNOWN DEVICE
-# ============================================================
-
-print("\n[TEST 2] UNKNOWN DEVICE")
-
-unknown_device = "UNKNOWN_DEVICE"
-
-authorized_unknown = verify_device(unknown_device)
-
-print("Device:", unknown_device)
-print("Authorized:", authorized_unknown)
-
-
-# ============================================================
-# TEST 3 — VALID HMAC
-# ============================================================
-
-print("\n[TEST 3] VALID HMAC")
-
-secret = get_device_secret(device_id)
-
-signature = generate_signature(
-    sensor_data,
-    secret
-)
-
-valid_signature = verify_signature(
-    sensor_data,
-    signature,
-    secret
-)
-
-print("Signature generated:", signature)
-print("Signature valid:", valid_signature)
+    assert result is True
 
 
-# ============================================================
-# TEST 4 — TAMPERED DATA
-# ============================================================
+def test_tampered_data():
+    sensor_data = {
+        "device_id": "ESP32_01",
+        "timestamp": "2026-08-29T23:00:00",
+        "temperature": 30,
+        "humidity": 60,
+        "voltage": 3.3,
+        "current": 0.42,
+        "vibration": 0.12
+    }
 
-print("\n[TEST 4] TAMPERED DATA")
+    secret = get_device_secret("ESP32_01")
 
-tampered_data = sensor_data.copy()
+    signature = generate_signature(
+        sensor_data,
+        secret
+    )
 
-tampered_data["temperature"] = 99
+    tampered_data = sensor_data.copy()
+    tampered_data["temperature"] = 99
 
-tampered_signature_valid = verify_signature(
-    tampered_data,
-    signature,
-    secret
-)
+    result = verify_signature(
+        tampered_data,
+        signature,
+        secret
+    )
 
-print("Original temperature:", sensor_data["temperature"])
-print("Tampered temperature:", tampered_data["temperature"])
-print(
-    "Signature valid after tampering:",
-    tampered_signature_valid
-)
-
-
-print("\n" + "=" * 60)
-print("CYBERSECURITY TEST COMPLETE")
-print("=" * 60)
+    assert result is False
