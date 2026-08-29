@@ -81,7 +81,7 @@ elif mode == "Hazard":
 else:
 
     sensor_data = {
-        "device_id": "UNKNOWN_DEVICE",
+        "device_id": "ESP32_01",
         "timestamp": "2026-08-30T00:10:00",
         "temperature": 30,
         "humidity": 60,
@@ -95,7 +95,10 @@ else:
 # RUN COMPLETE PIPELINE
 # ============================================================
 
-pipeline_result = run_pipeline(sensor_data)
+pipeline_result = run_pipeline(
+    sensor_data,
+    tamper=(mode == "Cyber Attack")
+)
 
 
 # ============================================================
