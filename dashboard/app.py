@@ -1,9 +1,12 @@
 import streamlit as st
 import sys
 from pathlib import Path
-import requests
 import pandas as pd
-# Allow dashboard to import project-level pipeline.py
+
+# ============================================================
+# PROJECT IMPORT
+# ============================================================
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -24,18 +27,11 @@ st.set_page_config(
 
 
 # ============================================================
-# CONFIGURATION
-# ============================================================
-
-AI_API_URL = "http://127.0.0.1:8000/predict"
-
-
-# ============================================================
 # TITLE
 # ============================================================
 
 st.title("🛡️ Safe Lab Sentinel")
-st.subheader("Intelligent Laboratory Monitoring System")
+st.subheader("Intelligent Laboratory Monitoring & Security System")
 
 st.divider()
 
@@ -50,11 +46,17 @@ mode = st.sidebar.radio(
     "Simulation Mode",
     ["Normal", "Hazard", "Cyber Attack"]
 )
+
+
+# ============================================================
+# SENSOR SIMULATION
+# ============================================================
+
 if mode == "Normal":
 
     sensor_data = {
         "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:00:00",
+        "timestamp": "2026-08-30T00:00:00",
         "temperature": 30,
         "humidity": 60,
         "voltage": 3.3,
@@ -62,11 +64,12 @@ if mode == "Normal":
         "vibration": 0.12
     }
 
+
 elif mode == "Hazard":
 
     sensor_data = {
         "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:05:00",
+        "timestamp": "2026-08-30T00:05:00",
         "temperature": 85,
         "humidity": 92,
         "voltage": 4.3,
@@ -74,150 +77,146 @@ elif mode == "Hazard":
         "vibration": 3.0
     }
 
+
 else:
 
     sensor_data = {
-        "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:10:00",
+        "device_id": "UNKNOWN_DEVICE",
+        "timestamp": "2026-08-30T00:10:00",
         "temperature": 30,
         "humidity": 60,
         "voltage": 3.3,
         "current": 0.42,
         "vibration": 0.12
     }
+
+
+# ============================================================
+# RUN COMPLETE PIPELINE
+# ============================================================
 
 pipeline_result = run_pipeline(sensor_data)
 
 
 # ============================================================
-# SENSOR DATA
+# EXTRACT PIPELINE RESULTS
 # ============================================================
 
-# ============================================================
-# SENSOR DATA
-# ============================================================
+device_id = sensor_data["device_id"]
 
-if mode == "Normal":
+device_verified = pipeline_result.get(
+    "device_verified",
+    False
+)
 
-    sensor_data = {
-        "device_id": "ESP32_01",
-        "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
-        "vibration": 0.12
-    }
+signature_valid = pipeline_result.get(
+    "signature_valid",
+    False
+)
 
-elif mode == "Hazard":
+security_status = pipeline_result.get(
+    "security_status",
+    "UNKNOWN"
+)
 
-    sensor_data = {
-        "device_id": "ESP32_01",
-        "temperature": 85,
-        "humidity": 92,
-        "voltage": 4.3,
-        "current": 2.0,
-        "vibration": 3.0
-    }
+security_risk = pipeline_result.get(
+    "security_risk",
+    "UNKNOWN"
+)
 
-elif mode == "Cyber Attack":
+security_score = pipeline_result.get(
+    "security_risk_score",
+    0
+)
 
-    sensor_data = {
-        "device_id": "UNKNOWN_DEVICE",
-        "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
-        "vibration": 0.12
-    }
+security_reasons = pipeline_result.get(
+    "security_reasons",
+    pipeline_result.get("reasons", [])
+)
 
+ai_status = pipeline_result.get(
+    "ai_status",
+    "UNKNOWN"
+)
 
-# ============================================================
-# GET AI RESULT
-# ============================================================
+ai_risk = pipeline_result.get(
+    "ai_risk",
+    "UNKNOWN"
+)
 
-try:
+ai_score = pipeline_result.get(
+    "ai_risk_score",
+    0
+)
 
-    response = requests.post(
-        AI_API_URL,
-        json=sensor_data,
-        timeout=5
-    )
+ai_prediction = pipeline_result.get(
+    "ai_prediction",
+    0
+)
 
-    ai_result = response.json()
+final_status = pipeline_result.get(
+    "final_status",
+    "UNKNOWN"
+)
 
-    ai_connected = True
-
-except Exception as error:
-
-    ai_result = {}
-
-    ai_connected = False
-
-    st.error(
-        "⚠️ AI backend is not running. "
-        "Start the FastAPI server first."
-    )
+action = pipeline_result.get(
+    "action",
+    "UNKNOWN"
+)
 
 
 # ============================================================
-# TOP STATUS CARDS
+# SYSTEM OVERVIEW
 # ============================================================
 
-col1, col2, col3 = st.columns(3)
+st.subheader("📊 System Overview")
+
+col1, col2, col3, col4 = st.columns(4)
 
 
 with col1:
 
     st.metric(
         "Device",
-        sensor_data["device_id"]
+        device_id
     )
 
 
 with col2:
 
-    if ai_connected:
-
+    if device_verified:
         st.metric(
-            "AI Connection",
-            "🟢 ONLINE"
+            "Device Security",
+            "VERIFIED"
         )
-
     else:
-
         st.metric(
-            "AI Connection",
-            "🔴 OFFLINE"
+            "Device Security",
+            "REJECTED"
         )
 
 
 with col3:
 
-    if ai_connected:
+    st.metric(
+        "Security Risk",
+        security_risk
+    )
 
-        risk = ai_result.get(
-            "risk",
-            "UNKNOWN"
-        )
 
-        st.metric(
-            "AI Risk",
-            risk
-        )
+with col4:
 
-    else:
-
-        st.metric(
-            "AI Risk",
-            "UNKNOWN"
-        )
+    st.metric(
+        "AI Risk",
+        ai_risk
+    )
 
 
 st.divider()
 
 
 # ============================================================
-# SENSOR READINGS
+# LIVE SENSOR READINGS
 # ============================================================
 
 st.subheader("📡 Live Sensor Readings")
@@ -269,6 +268,80 @@ st.divider()
 
 
 # ============================================================
+# CYBERSECURITY MONITORING
+# ============================================================
+
+st.subheader("🔐 Cybersecurity Monitoring")
+
+col1, col2, col3 = st.columns(3)
+
+
+with col1:
+
+    if device_verified:
+
+        st.success("🟢 DEVICE VERIFIED")
+
+    else:
+
+        st.error("🔴 DEVICE REJECTED")
+
+
+with col2:
+
+    if signature_valid:
+
+        st.success("🟢 HMAC SIGNATURE VALID")
+
+    else:
+
+        st.error("🔴 HMAC SIGNATURE INVALID")
+
+
+with col3:
+
+    st.metric(
+        "Security Risk Score",
+        security_score
+    )
+
+
+# ============================================================
+# SECURITY STATUS DETAILS
+# ============================================================
+
+st.subheader("Security Status")
+
+st.write(
+    f"**Status:** {security_status}"
+)
+
+st.write(
+    f"**Risk Level:** {security_risk}"
+)
+
+
+if security_reasons:
+
+    st.write("**Security Reasons:**")
+
+    for reason in security_reasons:
+
+        st.warning(
+            f"⚠️ {reason}"
+        )
+
+else:
+
+    st.success(
+        "🟢 No security abnormalities detected."
+    )
+
+
+st.divider()
+
+
+# ============================================================
 # AI MONITORING
 # ============================================================
 
@@ -277,55 +350,31 @@ st.subheader("🤖 AI Monitoring")
 col1, col2, col3 = st.columns(3)
 
 
-if ai_connected:
-
-    ai_status = ai_result.get(
-        "status",
-        "UNKNOWN"
-    )
-
-    ai_risk = ai_result.get(
-        "risk",
-        "UNKNOWN"
-    )
-
-    risk_score = ai_result.get(
-        "risk_score",
-        0
-    )
-
-    prediction = ai_result.get(
-        "prediction",
-        0
-    )
-
-else:
-
-    ai_status = "OFFLINE"
-    ai_risk = "UNKNOWN"
-    risk_score = 0
-    prediction = 0
-
-
 with col1:
 
-    if prediction == 1:
+    if ai_prediction == 1:
 
         st.error(
-            f"🚨 {ai_status}"
+            f"🚨 AI Status: {ai_status}"
+        )
+
+    elif ai_status == "NOT_RUN":
+
+        st.warning(
+            "⚠️ AI Analysis Not Run"
         )
 
     else:
 
         st.success(
-            f"🟢 {ai_status}"
+            f"🟢 AI Status: {ai_status}"
         )
 
 
 with col2:
 
     st.metric(
-        "Risk Level",
+        "AI Risk Level",
         ai_risk
     )
 
@@ -333,65 +382,99 @@ with col2:
 with col3:
 
     st.metric(
-        "Risk Score",
-        risk_score
+        "AI Risk Score",
+        ai_score
     )
+
+
+st.write(
+    f"**AI Prediction:** `{ai_prediction}`"
+)
 
 
 st.divider()
 
 
 # ============================================================
-# CYBERSECURITY STATUS
+# FINAL SYSTEM DECISION
 # ============================================================
 
-st.subheader("🔐 Cybersecurity Status")
+st.subheader("🚨 Final System Decision")
+
+
+if final_status == "CRITICAL":
+
+    st.error(
+        "🚨 SYSTEM ALERT"
+    )
+
+elif final_status == "WARNING":
+
+    st.warning(
+        "⚠️ SYSTEM WARNING"
+    )
+
+elif final_status == "NORMAL":
+
+    st.success(
+        "🟢 SYSTEM NORMAL"
+    )
+
+else:
+
+    st.info(
+        f"ℹ️ SYSTEM STATUS: {final_status}"
+    )
+
 
 col1, col2 = st.columns(2)
 
 
 with col1:
 
-    st.success(
-        "🟢 DEVICE VERIFIED"
+    st.metric(
+        "Final Status",
+        final_status
     )
 
 
 with col2:
 
-    st.info(
-        "HMAC integrity verification active"
+    st.metric(
+        "Recommended Action",
+        action
     )
 
 
-st.divider()
-
-
 # ============================================================
-# SYSTEM DECISION
+# DECISION EXPLANATION
 # ============================================================
 
-st.subheader("🚨 System Decision")
-
-
-if prediction == 1:
+if action == "BLOCK":
 
     st.error(
-        "🚨 ALERT — SUSPICIOUS ACTIVITY DETECTED"
+        "⛔ The system blocked the data because the device "
+        "or message failed security verification."
     )
 
-    st.write(
-        "The AI model detected an abnormal sensor pattern."
+elif action == "ALERT":
+
+    st.error(
+        "🚨 The system detected a critical condition "
+        "requiring immediate attention."
+    )
+
+elif action == "INVESTIGATE":
+
+    st.warning(
+        "⚠️ The system detected a medium-risk condition "
+        "that should be investigated."
     )
 
 else:
 
     st.success(
-        "🟢 SYSTEM NORMAL"
-    )
-
-    st.write(
-        "No abnormal sensor pattern detected."
+        "✅ No critical abnormalities detected."
     )
 
 
@@ -406,7 +489,7 @@ st.subheader("📈 Sensor History")
 
 history = pd.DataFrame({
 
-    "Temperature": [
+    "Temperature (°C)": [
         27.0,
         27.3,
         27.1,
@@ -416,7 +499,7 @@ history = pd.DataFrame({
         sensor_data["temperature"]
     ],
 
-    "Humidity": [
+    "Humidity (%)": [
         55,
         57,
         56,
@@ -437,6 +520,7 @@ history = pd.DataFrame({
     ]
 })
 
+
 st.line_chart(history)
 
 
@@ -453,23 +537,43 @@ events = pd.DataFrame({
 
     "Event": [
         "Sensor data received",
-        "AI analysis completed",
-        "Security verification completed"
+        "Device verification",
+        "HMAC integrity check",
+        "Security risk analysis",
+        "AI anomaly detection",
+        "Final system decision"
     ],
 
     "Status": [
+
         "🟢 Received",
-        "🚨 Suspicious" if prediction == 1 else "🟢 Normal",
+
         "🟢 Verified"
+        if device_verified
+        else "🔴 Rejected",
+
+        "🟢 Valid"
+        if signature_valid
+        else "🔴 Invalid",
+
+        security_risk,
+
+        ai_risk,
+
+        final_status
     ]
 })
 
+
 st.dataframe(
     events,
-    use_container_width=True
+    use_container_width=True,
+    hide_index=True
 )
 
+
 st.divider()
+
 
 # ============================================================
 # PROPOSED HARDWARE EXTENSION
@@ -479,11 +583,34 @@ st.subheader("🔌 Proposed Hardware Extension")
 
 st.write(
     "The current SafeLab Sentinel prototype is software-based. "
-    "This diagram shows a possible future hardware implementation."
+    "The following diagram represents a possible future hardware "
+    "implementation using sensors and a microcontroller."
 )
 
-st.image(
-    "dashboard/circuit.png",
-    caption="Proposed Arduino-based hardware extension",
-    width="stretch"
+
+circuit_path = Path(__file__).resolve().parent / "circuit.png"
+
+if circuit_path.exists():
+
+    st.image(
+        str(circuit_path),
+        caption="Proposed Arduino-based hardware extension",
+        width="stretch"
+    )
+
+else:
+
+    st.info(
+        "Hardware extension diagram not found."
+    )
+
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.divider()
+
+st.caption(
+    "SafeLab Sentinel — Intelligent Laboratory Monitoring & Security System"
 )
