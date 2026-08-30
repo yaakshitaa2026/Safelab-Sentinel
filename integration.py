@@ -25,8 +25,7 @@ AI_API_URL = "http://127.0.0.1:8000/predict"
 
 DEVICE_ID = "ESP32_01"
 
-# IMPORTANT:
-# This must match the secret registered for ESP001
+# This must match the secret registered for ESP32_01
 DEVICE_SECRET = get_device_secret(DEVICE_ID)
 
 
@@ -37,15 +36,11 @@ DEVICE_SECRET = get_device_secret(DEVICE_ID)
 sensor_data = {
     "device_id": DEVICE_ID,
 
-    "timestamp": "2026-08-29T20:00:00",
+    "timestamp": "2026-08-30T13:00:00",
 
     "temperature": 85,
 
-    "humidity": 92,
-
-    "voltage": 4.3,
-
-    "current": 2.0,
+    "aqi": 250,
 
     "vibration": 3.0
 }
@@ -101,6 +96,8 @@ try:
         timeout=5
     )
 
+    response.raise_for_status()
+
     ai_result = response.json()
 
     print("AI response received.")
@@ -119,22 +116,32 @@ except requests.exceptions.RequestException as error:
 
 
 # ============================================================
-# STEP 4 — CYBERSECURITY RISK ANALYSIS
+# STEP 4 — SENSOR RISK ANALYSIS
 # ============================================================
 
-print("\n[4] CYBERSECURITY ANALYSIS...")
+print("\n[4] SENSOR SAFETY ANALYSIS...")
 
-risk_result = calculate_risk(sensor_data)
+risk_result = calculate_risk(
+    sensor_data
+)
 
-print("Security Risk Score:", risk_result["risk_score"])
+print(
+    "Safety Risk Score:",
+    risk_result["risk_score"]
+)
 
-print("Security Risk Level:", risk_result["risk_level"])
+print(
+    "Safety Risk Level:",
+    risk_result["risk_level"]
+)
 
 print("Reasons:")
 
 for reason in risk_result["reasons"]:
 
     print("-", reason)
+
+
 # ============================================================
 # STEP 5 — RUN FULL SECURITY PIPELINE
 # ============================================================
@@ -147,16 +154,20 @@ security_result = process_message(
 )
 
 print("\nSECURITY PIPELINE RESULT:")
-print(security_result)
+
+print(
+    security_result
+)
 
 
 # ============================================================
-# STEP 5 — FINAL DECISION
+# STEP 6 — FINAL DECISION
 # ============================================================
 
 print("\n========================================")
 print("FINAL SYSTEM DECISION")
 print("========================================")
+
 
 if ai_result.get("prediction") == 1:
 
@@ -169,13 +180,19 @@ else:
 
 if risk_result["risk_level"] == "HIGH":
 
-    print("SECURITY LEVEL: HIGH")
+    print("SAFETY LEVEL: HIGH")
 
     print("ACTION: ALERT")
 
+elif risk_result["risk_level"] == "MEDIUM":
+
+    print("SAFETY LEVEL: MEDIUM")
+
+    print("ACTION: INVESTIGATE")
+
 else:
 
-    print("SECURITY LEVEL:", risk_result["risk_level"])
+    print("SAFETY LEVEL: LOW")
 
     print("ACTION: MONITOR")
 

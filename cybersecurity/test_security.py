@@ -10,6 +10,7 @@ from cybersecurity.security import (
 
 
 def test_authorized_device():
+
     device_id = "ESP32_01"
 
     result = verify_device(device_id)
@@ -18,6 +19,7 @@ def test_authorized_device():
 
 
 def test_unknown_device():
+
     device_id = "UNKNOWN_DEVICE"
 
     result = verify_device(device_id)
@@ -26,17 +28,18 @@ def test_unknown_device():
 
 
 def test_valid_hmac():
+
     sensor_data = {
         "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:00:00",
+        "timestamp": "2026-08-30T13:00:00",
         "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
+        "aqi": 45,
         "vibration": 0.12
     }
 
-    secret = get_device_secret("ESP32_01")
+    secret = get_device_secret(
+        "ESP32_01"
+    )
 
     signature = generate_signature(
         sensor_data,
@@ -53,17 +56,18 @@ def test_valid_hmac():
 
 
 def test_tampered_data():
+
     sensor_data = {
         "device_id": "ESP32_01",
-        "timestamp": "2026-08-29T23:00:00",
+        "timestamp": "2026-08-30T13:00:00",
         "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
+        "aqi": 45,
         "vibration": 0.12
     }
 
-    secret = get_device_secret("ESP32_01")
+    secret = get_device_secret(
+        "ESP32_01"
+    )
 
     signature = generate_signature(
         sensor_data,
@@ -71,6 +75,7 @@ def test_tampered_data():
     )
 
     tampered_data = sensor_data.copy()
+
     tampered_data["temperature"] = 99
 
     result = verify_signature(

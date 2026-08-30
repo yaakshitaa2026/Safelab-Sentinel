@@ -33,11 +33,7 @@ def initialize_database():
 
             temperature REAL,
 
-            humidity REAL,
-
-            voltage REAL,
-
-            current REAL,
+            aqi REAL,
 
             vibration REAL,
 
@@ -88,9 +84,7 @@ def save_event(sensor_data, pipeline_result):
             device_id,
 
             temperature,
-            humidity,
-            voltage,
-            current,
+            aqi,
             vibration,
 
             device_verified,
@@ -110,7 +104,7 @@ def save_event(sensor_data, pipeline_result):
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
 
         sensor_data.get(
@@ -129,17 +123,7 @@ def save_event(sensor_data, pipeline_result):
         ),
 
         sensor_data.get(
-            "humidity",
-            0
-        ),
-
-        sensor_data.get(
-            "voltage",
-            0
-        ),
-
-        sensor_data.get(
-            "current",
+            "aqi",
             0
         ),
 

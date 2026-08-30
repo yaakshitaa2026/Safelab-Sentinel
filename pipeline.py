@@ -51,26 +51,23 @@ def calculate_sensor_risk(sensor_data):
     Calculate laboratory/environmental risk directly
     from the sensor readings.
 
-    Normal values:
-        Temperature : around 30 C
-        Humidity    : around 60 %
-        Voltage     : around 3.3 V
-        Current     : around 0.42 A
-        Vibration   : around 0.12
-
-    Hazard values:
-        Temperature : very high
-        Humidity    : very high
-        Voltage     : abnormal
-        Current     : high
-        Vibration   : high
+    Monitored parameters:
+        Temperature : laboratory/equipment heat
+        AQI         : air quality / possible smoke or fumes
+        Vibration   : abnormal equipment movement
     """
 
-    temperature = float(sensor_data.get("temperature", 0))
-    humidity = float(sensor_data.get("humidity", 0))
-    voltage = float(sensor_data.get("voltage", 0))
-    current = float(sensor_data.get("current", 0))
-    vibration = float(sensor_data.get("vibration", 0))
+    temperature = float(
+        sensor_data.get("temperature", 0)
+    )
+
+    aqi = float(
+        sensor_data.get("aqi", 0)
+    )
+
+    vibration = float(
+        sensor_data.get("vibration", 0)
+    )
 
     risk_score = 0
     reasons = []
@@ -81,58 +78,50 @@ def calculate_sensor_risk(sensor_data):
 
     if temperature >= 80:
         risk_score += 35
-        reasons.append("Critically high temperature")
+        reasons.append(
+            "Critically high temperature"
+        )
 
     elif temperature >= 60:
         risk_score += 20
-        reasons.append("Abnormally high temperature")
+        reasons.append(
+            "Abnormally high temperature"
+        )
 
     elif temperature >= 45:
         risk_score += 10
-        reasons.append("Elevated temperature")
+        reasons.append(
+            "Elevated temperature"
+        )
 
 
     # --------------------------------------------------------
-    # HUMIDITY
+    # AIR QUALITY INDEX (AQI)
     # --------------------------------------------------------
 
-    if humidity >= 90:
+    if aqi > 300:
+        risk_score += 30
+        reasons.append(
+            "Hazardous air quality"
+        )
+
+    elif aqi > 200:
+        risk_score += 25
+        reasons.append(
+            "Very unhealthy air quality"
+        )
+
+    elif aqi > 150:
         risk_score += 20
-        reasons.append("Critically high humidity")
+        reasons.append(
+            "Unhealthy air quality"
+        )
 
-    elif humidity >= 80:
-        risk_score += 12
-        reasons.append("Abnormally high humidity")
-
-    elif humidity >= 70:
-        risk_score += 5
-        reasons.append("Elevated humidity")
-
-
-    # --------------------------------------------------------
-    # VOLTAGE
-    # --------------------------------------------------------
-
-    if voltage >= 4.2 or voltage <= 2.5:
-        risk_score += 20
-        reasons.append("Abnormal voltage level")
-
-    elif voltage >= 3.8 or voltage <= 2.8:
+    elif aqi > 100:
         risk_score += 10
-        reasons.append("Voltage outside normal operating range")
-
-
-    # --------------------------------------------------------
-    # CURRENT
-    # --------------------------------------------------------
-
-    if current >= 1.5:
-        risk_score += 20
-        reasons.append("Abnormally high current")
-
-    elif current >= 1.0:
-        risk_score += 10
-        reasons.append("Elevated current")
+        reasons.append(
+            "Poor air quality"
+        )
 
 
     # --------------------------------------------------------
@@ -141,22 +130,30 @@ def calculate_sensor_risk(sensor_data):
 
     if vibration >= 2.5:
         risk_score += 20
-        reasons.append("Critically high vibration")
+        reasons.append(
+            "Critically high vibration"
+        )
 
     elif vibration >= 1.5:
         risk_score += 12
-        reasons.append("Abnormally high vibration")
+        reasons.append(
+            "Abnormally high vibration"
+        )
 
     elif vibration >= 0.8:
         risk_score += 5
-        reasons.append("Elevated vibration")
+        reasons.append(
+            "Elevated vibration"
+        )
 
 
     # --------------------------------------------------------
     # LIMIT SCORE
     # --------------------------------------------------------
 
-    risk_score = int(clamp(risk_score))
+    risk_score = int(
+        clamp(risk_score)
+    )
 
 
     # --------------------------------------------------------
@@ -371,7 +368,6 @@ def run_pipeline(sensor_data, tamper=False):
             "Security verification failed"
         )
 
-
         return {
             "accepted": False,
 
@@ -485,14 +481,6 @@ def run_pipeline(sensor_data, tamper=False):
     # ========================================================
     # 9. COMBINE SECURITY + SENSOR RISK
     # ========================================================
-
-    # The sensor analysis is used as the main environmental
-    # safety signal.
-    #
-    # Security analysis is still retained.
-    #
-    # For normal telemetry, the system remains LOW risk
-    # unless an actual security violation occurred.
 
     if security_level == "HIGH":
 
@@ -629,10 +617,6 @@ def run_pipeline(sensor_data, tamper=False):
 
     else:
 
-        # If AI server is offline, we don't allow that
-        # to incorrectly turn a normal environment into
-        # CRITICAL.
-
         ai_prediction = 0
 
         ai_status = "OFFLINE"
@@ -645,13 +629,6 @@ def run_pipeline(sensor_data, tamper=False):
     # ========================================================
     # 12. IMPORTANT AI SAFETY CHECK
     # ========================================================
-
-    # Only treat AI as a critical signal when the model
-    # actually reports an anomaly AND the telemetry is
-    # also meaningfully abnormal.
-    #
-    # This prevents a badly calibrated model from turning
-    # the Normal demo into 100/CRITICAL.
 
     telemetry_is_abnormal = (
         sensor_score >= 30

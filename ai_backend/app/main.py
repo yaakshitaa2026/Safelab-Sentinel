@@ -3,8 +3,13 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 
+from pathlib import Path
 
-# Create the FastAPI application
+
+# ============================================================
+# CREATE FASTAPI APPLICATION
+# ============================================================
+
 app = FastAPI(
     title="SafeLab Sentinel AI Backend",
     description="AI-based anomaly detection system",
@@ -12,8 +17,9 @@ app = FastAPI(
 )
 
 
-# Load the trained machine-learning model
-from pathlib import Path
+# ============================================================
+# LOAD TRAINED MACHINE-LEARNING MODEL
+# ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,22 +28,23 @@ model = joblib.load(
 )
 
 
-# Define the sensor data that our API expects
+# ============================================================
+# SENSOR DATA MODEL
+# ============================================================
+
 class SensorData(BaseModel):
 
     device_id: str
     timestamp: str
 
     temperature: float
-    humidity: float
-    voltage: float
-    current: float
+    aqi: float
     vibration: float
 
 
-# --------------------------------------------------
+# ============================================================
 # HOME / HEALTH CHECK
-# --------------------------------------------------
+# ============================================================
 
 @app.get("/")
 def home():
@@ -48,32 +55,39 @@ def home():
     }
 
 
-# --------------------------------------------------
+# ============================================================
 # AI PREDICTION
-# --------------------------------------------------
+# ============================================================
 
 @app.post("/predict")
 def predict(data: SensorData):
 
+    # --------------------------------------------------------
     # Convert received sensor data into a table
+    # --------------------------------------------------------
+
     input_data = pd.DataFrame([{
 
         "temperature": data.temperature,
-        "humidity": data.humidity,
-        "voltage": data.voltage,
-        "current": data.current,
+        "aqi": data.aqi,
         "vibration": data.vibration
 
     }])
 
 
+    # --------------------------------------------------------
     # Ask the trained AI model to classify the reading
+    # --------------------------------------------------------
+
     prediction = int(
         model.predict(input_data)[0]
     )
 
 
-    # Convert the AI's 0/1 output into something understandable
+    # --------------------------------------------------------
+    # Convert AI output into understandable result
+    # --------------------------------------------------------
+
     if prediction == 1:
 
         status = "SUSPICIOUS"
@@ -87,7 +101,10 @@ def predict(data: SensorData):
         risk_score = 10
 
 
-    # Send the result back
+    # --------------------------------------------------------
+    # Return result
+    # --------------------------------------------------------
+
     return {
 
         "device_id": data.device_id,

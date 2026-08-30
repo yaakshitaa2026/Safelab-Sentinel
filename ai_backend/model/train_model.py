@@ -6,63 +6,108 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 
+# ============================================================
+# FEATURES USED BY THE AI MODEL
+# ============================================================
+
 FEATURES = [
     "temperature",
-    "humidity",
-    "voltage",
-    "current",
+    "aqi",
     "vibration"
 ]
 
 
-# Load the sensor dataset
+# ============================================================
+# LOAD SENSOR DATASET
+# ============================================================
+
 df = pd.read_csv("data/sensor_data.csv")
 
 
-# Select the sensor values used by the AI
+# ============================================================
+# SELECT SENSOR FEATURES
+# ============================================================
+
 X = df[FEATURES]
 
-# Select the correct answers
+
+# ============================================================
+# SELECT TARGET LABEL
+# 0 = NORMAL
+# 1 = ANOMALOUS
+# ============================================================
+
 y = df["label"]
 
 
-# Split the dataset into training and testing data
+# ============================================================
+# SPLIT DATA INTO TRAINING AND TESTING DATA
+# ============================================================
+
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
     test_size=0.2,
-    random_state=42
+    random_state=42,
+    stratify=y
 )
 
 
-# Create the Random Forest machine-learning model
+# ============================================================
+# CREATE RANDOM FOREST MODEL
+# ============================================================
+
 model = RandomForestClassifier(
     n_estimators=100,
     random_state=42
 )
 
 
-# Train the model
-model.fit(X_train, y_train)
+# ============================================================
+# TRAIN MODEL
+# ============================================================
+
+model.fit(
+    X_train,
+    y_train
+)
 
 
-# Test the trained model
-predictions = model.predict(X_test)
+# ============================================================
+# TEST MODEL
+# ============================================================
+
+predictions = model.predict(
+    X_test
+)
 
 
-# Calculate accuracy
+# ============================================================
+# CALCULATE ACCURACY
+# ============================================================
+
 accuracy = accuracy_score(
     y_test,
     predictions
 )
 
-print("Model accuracy:", accuracy)
+
+print(
+    "Model accuracy:",
+    accuracy
+)
 
 
-# Save the trained model
+# ============================================================
+# SAVE TRAINED MODEL
+# ============================================================
+
 joblib.dump(
     model,
     "model/anomaly_model.pkl"
 )
 
-print("Model saved successfully.")
+
+print(
+    "Model saved successfully."
+)

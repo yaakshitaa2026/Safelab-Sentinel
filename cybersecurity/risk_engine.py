@@ -2,6 +2,11 @@ def calculate_risk(data):
     """
     Calculate laboratory safety risk from sensor readings.
 
+    Monitored parameters:
+        - Temperature
+        - AQI (Air Quality Index)
+        - Vibration
+
     Returns:
         risk_score: 0-100
         risk_level: LOW / MEDIUM / HIGH
@@ -12,9 +17,7 @@ def calculate_risk(data):
     reasons = []
 
     temperature = data.get("temperature", 0)
-    humidity = data.get("humidity", 0)
-    voltage = data.get("voltage", 0)
-    current = data.get("current", 0)
+    aqi = data.get("aqi", 0)
     vibration = data.get("vibration", 0)
 
     # ---------------------------------------------------------
@@ -30,40 +33,24 @@ def calculate_risk(data):
         reasons.append("High temperature")
 
     # ---------------------------------------------------------
-    # HUMIDITY
+    # AIR QUALITY INDEX (AQI)
     # ---------------------------------------------------------
 
-    if humidity > 90:
-        risk_score += 20
-        reasons.append("Abnormally high humidity")
+    if aqi > 300:
+        risk_score += 30
+        reasons.append("Hazardous air quality")
 
-    elif humidity > 75:
+    elif aqi > 200:
+        risk_score += 25
+        reasons.append("Very unhealthy air quality")
+
+    elif aqi > 150:
+        risk_score += 20
+        reasons.append("Unhealthy air quality")
+
+    elif aqi > 100:
         risk_score += 10
-        reasons.append("High humidity")
-
-    # ---------------------------------------------------------
-    # VOLTAGE
-    # ---------------------------------------------------------
-
-    if voltage > 4.2:
-        risk_score += 20
-        reasons.append("Abnormally high voltage")
-
-    elif 0 < voltage < 2.8:
-        risk_score += 15
-        reasons.append("Abnormally low voltage")
-
-    # ---------------------------------------------------------
-    # CURRENT
-    # ---------------------------------------------------------
-
-    if current > 2.0:
-        risk_score += 20
-        reasons.append("Abnormally high current")
-
-    elif current > 1.0:
-        risk_score += 10
-        reasons.append("High current")
+        reasons.append("Poor air quality")
 
     # ---------------------------------------------------------
     # VIBRATION

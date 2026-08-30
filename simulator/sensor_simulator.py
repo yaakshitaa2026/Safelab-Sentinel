@@ -13,9 +13,7 @@ def generate_normal_reading():
         "device_id": DEVICE_ID,
         "timestamp": datetime.now().isoformat(),
         "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
+        "aqi": 45,
         "vibration": 0.12
     }
 
@@ -26,9 +24,7 @@ def generate_hazard_reading():
         "device_id": DEVICE_ID,
         "timestamp": datetime.now().isoformat(),
         "temperature": 85,
-        "humidity": 92,
-        "voltage": 4.3,
-        "current": 2.0,
+        "aqi": 250,
         "vibration": 3.0
     }
 
@@ -45,10 +41,8 @@ def print_result(sensor_data, result):
     print("-" * 60)
 
     print("Device:", sensor_data["device_id"])
-    print("Temperature:", sensor_data["temperature"])
-    print("Humidity:", sensor_data["humidity"])
-    print("Voltage:", sensor_data["voltage"])
-    print("Current:", sensor_data["current"])
+    print("Temperature:", sensor_data["temperature"], "°C")
+    print("AQI:", sensor_data["aqi"])
     print("Vibration:", sensor_data["vibration"])
 
     print("\nSECURITY")

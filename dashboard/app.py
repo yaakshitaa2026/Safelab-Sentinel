@@ -20,16 +20,11 @@ st.set_page_config(
 
 # ============================================================
 # HTML RENDER HELPER
-# IMPORTANT:
-# This removes indentation from every HTML line so Streamlit
-# does NOT interpret the HTML as a Markdown code block.
 # ============================================================
 
 def render_html(content):
     html = dedent(content).strip()
 
-    # Remove leading whitespace from every line.
-    # This is the key fix for the white HTML/code blocks.
     html = "\n".join(
         line.strip() for line in html.splitlines()
     )
@@ -60,7 +55,11 @@ from database import save_event, get_recent_events
 st.markdown(
     """
 <style>
-/* HIDE STREAMLIT TOP HEADER */
+
+/* ============================================================
+   HIDE STREAMLIT TOP HEADER
+   ============================================================ */
+
 header[data-testid="stHeader"] {
     display: none !important;
 }
@@ -72,6 +71,7 @@ header[data-testid="stHeader"] {
 [data-testid="stDecoration"] {
     display: none !important;
 }
+
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
@@ -336,7 +336,7 @@ div[data-testid="stRadio"] label p {
 
 .telemetry-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 45px;
 }
@@ -745,9 +745,7 @@ if mode == "Normal":
         "device_id": "ARDUINO_01",
         "timestamp": "2026-08-30T00:00:00",
         "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
+        "aqi": 45,
         "vibration": 0.12,
     }
 
@@ -757,9 +755,7 @@ elif mode == "Hazard":
         "device_id": "ARDUINO_01",
         "timestamp": "2026-08-30T00:05:00",
         "temperature": 85,
-        "humidity": 92,
-        "voltage": 4.3,
-        "current": 2.0,
+        "aqi": 250,
         "vibration": 3.0,
     }
 
@@ -769,9 +765,7 @@ else:
         "device_id": "UNKNOWN_DEVICE",
         "timestamp": "2026-08-30T00:10:00",
         "temperature": 30,
-        "humidity": 60,
-        "voltage": 3.3,
-        "current": 0.42,
+        "aqi": 45,
         "vibration": 0.12,
     }
 
@@ -996,7 +990,6 @@ overall_risk = max(
 
 # ============================================================
 # FALLBACK FINAL STATUS
-# Only used if pipeline didn't provide one.
 # ============================================================
 
 if final_status.upper() == "UNKNOWN":
@@ -1263,18 +1256,8 @@ temperature = sensor_data.get(
     0,
 )
 
-humidity = sensor_data.get(
-    "humidity",
-    0,
-)
-
-voltage = sensor_data.get(
-    "voltage",
-    0,
-)
-
-current = sensor_data.get(
-    "current",
+aqi = sensor_data.get(
+    "aqi",
     0,
 )
 
@@ -1304,37 +1287,11 @@ render_html(
 <div class="telemetry-card">
 
 <div class="telemetry-label">
-💧 Humidity
+💨 Air Quality (AQI)
 </div>
 
 <div class="telemetry-value">
-{humidity} %
-</div>
-
-</div>
-
-
-<div class="telemetry-card">
-
-<div class="telemetry-label">
-⚡ Voltage
-</div>
-
-<div class="telemetry-value">
-{voltage} V
-</div>
-
-</div>
-
-
-<div class="telemetry-card">
-
-<div class="telemetry-label">
-🔌 Current
-</div>
-
-<div class="telemetry-value">
-{current} A
+{aqi}
 </div>
 
 </div>
@@ -1829,7 +1786,7 @@ if recent_events:
 
         chart_columns = [
             "temperature",
-            "humidity",
+            "aqi",
             "vibration",
         ]
 
@@ -2129,8 +2086,8 @@ render_html(
 
 st.caption(
     "The current prototype uses an Arduino-based hardware "
-    "simulation to demonstrate sensor telemetry and the "
-    "SafeLab Sentinel security pipeline."
+    "simulation to demonstrate temperature, air quality, "
+    "vibration telemetry and the SafeLab Sentinel security pipeline."
 )
 
 
